@@ -15,46 +15,47 @@
 //This controller retrieves data from the customersService and associates it with the $scope
 //The $scope is ultimately bound to the customers view
 app.controller('CustomersController', function ($scope, customersService) {
-
-    //I like to have an init() for controllers that need to perform some initialization. Keeps things in
-    //one place...not required though especially in the simple example below
-    init();
-
-    function init() {
-        $scope.customers = customersService.getCustomers();
-    }
+    $scope.customers = [];
+    customersService.getCustomers().then(function (customers) {
+        for (id in customers) {
+            $scope.customers.push(customers[id]);
+        }
+    });
 
     $scope.insertCustomer = function () {
         var firstName = $scope.newCustomer.firstName;
         var lastName = $scope.newCustomer.lastName;
         var city = $scope.newCustomer.city;
-        customersService.insertCustomer(firstName, lastName, city);
+        customersService.insertCustomer(firstName, lastName, city).then(function (customer) {
+            $scope.customers.push(customer);
+        });
         $scope.newCustomer.firstName = '';
         $scope.newCustomer.lastName = '';
         $scope.newCustomer.city = '';
     };
 
     $scope.deleteCustomer = function (id) {
-        customersService.deleteCustomer(id);
+        customersService.deleteCustomer(id).then(function(response){
+            var customers = $scope.customers;
+            for (var i = customers.length - 1; i >= 0; i--) {
+                if (customers[i].id === id) {
+                    customers.splice(i, 1);
+                    break;
+                }
+            }            
+        });
     };
 });
 
 //This controller retrieves data from the customersService and associates it with the $scope
 //The $scope is bound to the order view
 app.controller('CustomerOrdersController', function ($scope, $routeParams, customersService) {
-    $scope.customer = {};
-    $scope.ordersTotal = 0.00;
 
-    //I like to have an init() for controllers that need to perform some initialization. Keeps things in
-    //one place...not required though especially in the simple example below
-    init();
-
-    function init() {
-        //Grab customerID off of the route        
-        var customerID = ($routeParams.customerID) ? parseInt($routeParams.customerID) : 0;
-        if (customerID > 0) {
-            $scope.customer = customersService.getCustomer(customerID);
-        }
+    var customerID = ($routeParams.customerID) ? parseInt($routeParams.customerID) : 0;
+    if (customerID > 0) {
+        customersService.getCustomer(customerID).then(function(customer) {
+            $scope.customer = customer;             
+        });
     }
 
 });
@@ -62,15 +63,9 @@ app.controller('CustomerOrdersController', function ($scope, $routeParams, custo
 //This controller retrieves data from the customersService and associates it with the $scope
 //The $scope is bound to the orders view
 app.controller('OrdersController', function ($scope, customersService) {
-    $scope.customers = [];
-
-    //I like to have an init() for controllers that need to perform some initialization. Keeps things in
-    //one place...not required though especially in the simple example below
-    init();
-
-    function init() {
-        $scope.customers = customersService.getCustomers();
-    }
+    customersService.getCustomers().then(function (customers) {
+        $scope.customers = customers;
+    });
 });
 
 app.controller('NavbarController', function ($scope, $location) {
